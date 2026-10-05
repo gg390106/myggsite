@@ -1,1 +1,299 @@
 
+.digit-circles {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+    margin: 16px 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #1f2937;
+    font-family: inherit;
+}
+
+.digit-circles__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.digit-circles__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.digit-circles__subtitle {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.digit-circles__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.digit-circles__status--connected {
+    background: #ecfdf3;
+    color: #15803d;
+}
+
+.digit-circles__status--disconnected {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.digit-circles__status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.digit-circles__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 140px;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.digit-circles__control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.digit-circles__control span {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.digit-circles__control select {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.digit-circles__control select:focus {
+    border-color: #6b7280;
+}
+
+.digit-circles__control select:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.digit-circles__market-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.digit-circles__market-info span {
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.digit-circles__error {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 12px;
+}
+
+.digit-circles__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.digit-circles__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 10px;
+    background: #f9fafb;
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease;
+}
+
+.digit-circles__row:hover {
+    transform: translateY(-1px);
+    background: #f3f4f6;
+}
+
+.digit-circles__digit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.digit-circles__digit--highest {
+    background: #22c55e;
+    color: #ffffff;
+}
+
+.digit-circles__digit--second {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.digit-circles__digit--lowest {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.digit-circles__details {
+    min-width: 0;
+    flex: 1;
+}
+
+.digit-circles__numbers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.digit-circles__numbers strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.digit-circles__numbers span {
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.digit-circles__bar {
+    width: 100%;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e5e7eb;
+}
+
+.digit-circles__bar-fill {
+    height: 100%;
+    min-width: 0;
+    border-radius: inherit;
+    background: #9ca3af;
+    transition: width 0.25s ease;
+}
+
+.digit-circles__bar-fill--highest {
+    background: #22c55e;
+}
+
+.digit-circles__bar-fill--second {
+    background: #3b82f6;
+}
+
+.digit-circles__bar-fill--lowest {
+    background: #ef4444;
+}
+
+.digit-circles__legend {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 16px;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.digit-circles__legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.digit-circles__legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9ca3af;
+}
+
+.digit-circles__legend-dot--highest {
+    background: #22c55e;
+}
+
+.digit-circles__legend-dot--second {
+    background: #3b82f6;
+}
+
+.digit-circles__legend-dot--lowest {
+    background: #ef4444;
+}
+
+.digit-circles__loading {
+    margin-top: 12px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    .digit-circles {
+        padding: 14px;
+    }
+
+    .digit-circles__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .digit-circles__controls {
+        grid-template-columns: 1fr;
+    }
+
+    .digit-circles__row {
+        gap: 9px;
+    }
+
+    .digit-circles__digit {
+        flex-basis: 38px;
+        width: 38px;
+        height: 38px;
+    }
+}
