@@ -70,7 +70,7 @@ const WS_URL =
 
 const DEFAULT_TICK_WINDOW = 100;
 
-const TICK_WINDOWS = [60, 100, 500];
+const TICK_WINDOWS = [100, 250, 500, 750, 1000];
 
 const DigitCircles = () => {
     const [symbols, setSymbols] = React.useState<ActiveSymbol[]>([]);
@@ -81,6 +81,9 @@ const DigitCircles = () => {
         React.useState(DEFAULT_TICK_WINDOW);
 
     const [ticks, setTicks] = React.useState<number[]>([]);
+    const [lastDigit, setLastDigit] = React.useState<number | null>(null);
+    const [isRunning, setIsRunning] = React.useState(false);
+    const [liveQuote, setLiveQuote] = React.useState<string | null>(null);
 
     const [isConnected, setIsConnected] =
         React.useState(false);
@@ -250,6 +253,8 @@ const DigitCircles = () => {
                     return;
                 }
 
+                setLastDigit(digit);
+
                 setTicks(
                     (currentTicks) => {
                         const updatedTicks = [
@@ -312,6 +317,8 @@ const DigitCircles = () => {
                 setIsLoading(true);
                 setErrorMessage('');
                 setTicks([]);
+                setLastDigit(null);
+                setLiveQuote(null);
                 setPipSize(null);
 
                 pipSizeRef.current = null;
@@ -324,7 +331,6 @@ const DigitCircles = () => {
                             tickWindowRef.current,
                         end: 'latest',
                         style: 'ticks',
-                        subscribe: 0,
                         req_id:
                             getNextRequestId(),
                     })
@@ -516,6 +522,12 @@ const DigitCircles = () => {
                             historyPipSize
                         );
 
+                        if (prices.length) {
+                            const latestPrice = prices[prices.length - 1];
+                            const formattedLatest = formatQuote(latestPrice, historyPipSize);
+                            if (formattedLatest !== null) setLiveQuote(formattedLatest);
+                        }
+
                         const historyDigits =
                             prices
                                 .map(
@@ -594,6 +606,8 @@ const DigitCircles = () => {
                         setPipSize(
                             incomingPipSize
                         );
+                        const formattedQuote = formatQuote(tick.quote, incomingPipSize);
+                        if (formattedQuote !== null) setLiveQuote(formattedQuote);
 
                         addDigitFromQuote(
                             tick.quote,
@@ -635,29 +649,43 @@ const DigitCircles = () => {
             return websocket;
         }, [
             addDigitFromQuote,
+            formatQuote,
             getLastDigit,
             getNextRequestId,
             isVolatilityIndex,
             subscribeToTicks,
         ]);
 
-    React.useEffect(() => {
-        const websocket =
-            connectWebSocket();
+    const stopAnalysis = React.useCallback(() => {
+        forgetSubscription();
+        setIsRunning(false);
+        setIsLoading(false);
+    }, [forgetSubscription]);
 
+    const startAnalysis = React.useCallback(() => {
+        if (isRunning) return;
+        setTicks([]);
+        setLastDigit(null);
+        setLiveQuote(null);
+        setErrorMessage('');
+        setIsLoading(true);
+        setIsRunning(true);
+        const websocket = websocketRef.current;
+        if (!websocket || websocket.readyState === WebSocket.CLOSED) {
+            connectWebSocket();
+        }
+    }, [connectWebSocket, isRunning]);
+
+    React.useEffect(() => {
+        // Load the available index list when the popup opens. No tick
+        // analysis starts until the user presses the Digit Circles Run button.
+        const websocket = connectWebSocket();
         return () => {
-            if (
-                websocket.readyState ===
-                    WebSocket.OPEN ||
-                websocket.readyState ===
-                    WebSocket.CONNECTING
-            ) {
+            if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
                 websocket.close();
             }
-
             websocketRef.current = null;
-            subscriptionIdRef.current =
-                null;
+            subscriptionIdRef.current = null;
         };
     }, [connectWebSocket]);
 
@@ -665,7 +693,7 @@ const DigitCircles = () => {
         tickWindowRef.current =
             tickWindow;
 
-        if (!selectedSymbol) {
+        if (!selectedSymbol || !isRunning) {
             return;
         }
 
@@ -690,6 +718,7 @@ const DigitCircles = () => {
         selectedSymbol,
         tickWindow,
         sendHistoryRequest,
+        isRunning,
     ]);
 
     const handleSymbolChange =
@@ -851,10 +880,14 @@ const DigitCircles = () => {
                 >
                     <span className="digit-circles__status-dot" />
 
-                    {isConnected
-                        ? 'Live'
-                        : 'Disconnected'}
+                    {isConnected ? 'Live' : isRunning ? 'Connecting' : 'Ready'}
                 </div>
+            </div>
+
+            <div className="digit-circles__live-price" aria-live="polite">
+                <span>LIVE MARKET PRICE</span>
+                <strong>{liveQuote ?? '—'}</strong>
+                <small>{selectedSymbolDetails?.underlying_symbol_name ?? 'Select a market'}</small>
             </div>
 
             <div className="digit-circles__controls">
@@ -928,6 +961,16 @@ const DigitCircles = () => {
                 </label>
             </div>
 
+            <div className="digit-circles__actions">
+                <button type="button" className="digit-circles__run" onClick={startAnalysis} disabled={isRunning || symbols.length === 0}>
+                    Run analysis
+                </button>
+                <button type="button" className="digit-circles__stop" onClick={stopAnalysis} disabled={!isRunning}>
+                    Stop
+                </button>
+                <span className="digit-circles__hint">Analysis only — does not place trades</span>
+            </div>
+
             {selectedSymbolDetails && (
                 <div className="digit-circles__market-info">
                     <span>
@@ -956,79 +999,27 @@ const DigitCircles = () => {
                 </div>
             )}
 
-            <div className="digit-circles__body">
-                {digitStats.map(
-                    (stat) => {
-                        const rank =
-                            getRank(
-                                stat.digit
-                            );
-
-                        return (
-                            <div
-                                className={`digit-circles__row digit-circles__row--${rank}`}
-                                key={
-                                    stat.digit
-                                }
-                            >
-                                <div
-                                    className={`digit-circles__digit digit-circles__digit--${rank}`}
-                                >
-                                    {
-                                        stat.digit
-                                    }
-                                </div>
-
-                                <div className="digit-circles__details">
-                                    <div className="digit-circles__numbers">
-                                        <strong>
-                                            {stat.percentage.toFixed(
-                                                1
-                                            )}
-                                            %
-                                        </strong>
-
-                                        <span>
-                                            {
-                                                stat.count
-                                            }{' '}
-                                            ticks
-                                        </span>
-                                    </div>
-
-                                    <div className="digit-circles__bar">
-                                        <div
-                                            className={`digit-circles__bar-fill digit-circles__bar-fill--${rank}`}
-                                            style={{
-                                                width: `${Math.min(
-                                                    stat.percentage,
-                                                    100
-                                                )}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+            <div className="digit-circles__body" aria-label="Digit frequency analysis">
+                {digitStats.map(stat => {
+                    const rank = getRank(stat.digit);
+                    const isLatest = lastDigit === stat.digit && isRunning;
+                    return (
+                        <div className={`digit-circles__tile ${isLatest ? 'digit-circles__tile--latest' : ''}`} key={stat.digit}>
+                            {isLatest && <span className="digit-circles__pointer" aria-label="Latest tick" />}
+                            <div className={`digit-circles__circle digit-circles__circle--${rank}`} style={{ '--digit-progress': `${Math.min(stat.percentage, 100)}%` } as React.CSSProperties}>
+                                <span className="digit-circles__number">{stat.digit}</span>
+                                <strong className="digit-circles__percentage">{stat.percentage.toFixed(1)}%</strong>
                             </div>
-                        );
-                    }
-                )}
+                            <span className="digit-circles__count">{stat.count} ticks</span>
+                        </div>
+                    );
+                })}
             </div>
-
             <div className="digit-circles__legend">
-                <span>
-                    <i className="digit-circles__legend-dot digit-circles__legend-dot--highest" />
-                    Highest
-                </span>
-
-                <span>
-                    <i className="digit-circles__legend-dot digit-circles__legend-dot--second" />
-                    Second
-                </span>
-
-                <span>
-                    <i className="digit-circles__legend-dot digit-circles__legend-dot--lowest" />
-                    Lowest
-                </span>
+                <span><i className="digit-circles__legend-dot digit-circles__legend-dot--highest" /> Highest</span>
+                <span><i className="digit-circles__legend-dot digit-circles__legend-dot--second" /> Second</span>
+                <span><i className="digit-circles__legend-dot digit-circles__legend-dot--lowest" /> Lowest</span>
+                {lastDigit !== null && isRunning && <span className="digit-circles__latest-label">Latest tick: {lastDigit}</span>}
             </div>
 
             {isLoading && (

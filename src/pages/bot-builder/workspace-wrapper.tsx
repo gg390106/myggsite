@@ -1,7 +1,6 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import Flyout from '@/components/flyout';
-import DigitCircles from '@/components/digit-circles/digit-circles';
 import { useStore } from '@/hooks/useStore';
 import StopBotModal from '../dashboard/stop-bot-modal';
 import Toolbar from './toolbar';
@@ -26,7 +25,6 @@ const WorkspaceWrapper = observer(() => {
             <React.Fragment>
                 <Toolbox />
                 <Toolbar />
-                <DigitCircles />
                 <Flyout />
                 <StopBotModal />
             </React.Fragment>

@@ -10,6 +10,7 @@ import Dialog from '@/components/shared_ui/dialog';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
+import DigitCircles from '@/components/digit-circles/digit-circles';
 import TradingViewModal from '@/components/trading-view-chart/trading-view-modal';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
 import { api_base, updateWorkspaceName } from '@/external/bot-skeleton';
@@ -84,6 +85,39 @@ const AppWrapper = observer(() => {
     const navigate = useNavigate();
     const [left_tab_shadow, setLeftTabShadow] = useState<boolean>(false);
     const [right_tab_shadow, setRightTabShadow] = useState<boolean>(false);
+    const [is_digit_circles_open, setIsDigitCirclesOpen] = useState(false);
+    const [digit_circles_position, setDigitCirclesPosition] = useState(() => ({ x: Math.max(16, window.innerWidth - 560), y: 150 }));
+    const digit_circles_drag = React.useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+
+    const startDigitCirclesDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+        if ((event.target as HTMLElement).closest('button')) return;
+        const panel = document.querySelector('.main__digit-circles-popup') as HTMLElement | null;
+        if (!panel) return;
+        const rect = panel.getBoundingClientRect();
+        digit_circles_drag.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            originX: rect.left,
+            originY: rect.top,
+        };
+        (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+        event.preventDefault();
+    };
+
+    const moveDigitCirclesPanel = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (!digit_circles_drag.current) return;
+        const drag = digit_circles_drag.current;
+        const panel = document.querySelector('.main__digit-circles-popup') as HTMLElement | null;
+        if (!panel) return;
+        const maxX = Math.max(0, window.innerWidth - panel.offsetWidth);
+        const maxY = Math.max(0, window.innerHeight - 64);
+        setDigitCirclesPosition({
+            x: Math.min(maxX, Math.max(0, drag.originX + event.clientX - drag.startX)),
+            y: Math.min(maxY, Math.max(0, drag.originY + event.clientY - drag.startY)),
+        });
+    };
+
+    const stopDigitCirclesDrag = () => { digit_circles_drag.current = null; };
 
     // Trade type modal state
     const [tradeTypeModalState, setTradeTypeModalState] = useState(getModalState());
@@ -438,6 +472,18 @@ const AppWrapper = observer(() => {
                                             className='icon-general-fill-g-path'
                                         />
                                         <Localize i18n_default_text='Tutorials' />
+                                        <button
+                                            type='button'
+                                            className='main__digit-circles-trigger'
+                                            aria-label='Open Digit Circles'
+                                            aria-expanded={is_digit_circles_open}
+                                            onClick={event => {
+                                                event.stopPropagation();
+                                                setIsDigitCirclesOpen(open => !open);
+                                            }}
+                                        >
+                                            Digit Circles
+                                        </button>
                                     </>
                                 }
                                 id='id-tutorials'
@@ -466,6 +512,34 @@ const AppWrapper = observer(() => {
                 <TradingViewModal />
             </DesktopWrapper>
             <MobileWrapper>{!is_open && <RunPanel />}</MobileWrapper>
+            {is_digit_circles_open && (
+                <div className='main__digit-circles-layer'>
+                    <section
+                        className='main__digit-circles-popup'
+                        role='dialog'
+                        aria-modal='false'
+                        aria-label='Digit Circles live statistics'
+                        style={{ left: digit_circles_position.x, top: digit_circles_position.y }}
+                    >
+                        <div
+                            className='main__digit-circles-dragbar'
+                            onPointerDown={startDigitCirclesDrag}
+                            onPointerMove={moveDigitCirclesPanel}
+                            onPointerUp={stopDigitCirclesDrag}
+                            onPointerCancel={stopDigitCirclesDrag}
+                        >
+                            <span>Digit Circles · drag to move</span>
+                            <button
+                                type='button'
+                                className='main__digit-circles-close'
+                                aria-label='Close Digit Circles'
+                                onClick={() => setIsDigitCirclesOpen(false)}
+                            >×</button>
+                        </div>
+                        <DigitCircles />
+                    </section>
+                </div>
+            )}
             <Dialog
                 cancel_button_text={cancel_button_text || localize('Cancel')}
                 className='dc-dialog__wrapper--fixed'
